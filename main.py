@@ -1,26 +1,20 @@
 import telebot
 from telebot import types
-from few_tasks_handler import sort_few_tasks
+from custom_handlers import sort_few_tasks, short_sent
 
-"""
-Нереализованые идеи:
-Создать гайд на telegraph
-
-Написать проект в ворде
-"""
-
-TOKEN_BOT = '6736749094:AAEmtd9iN1P5seG6F6UPuL8JLseF7GN8XMI'
+TOKEN_BOT = '6395798798:AAFKLPZZaPT4ZzYHM6K5_VWiXdjVh4j6XiE'
 bot = telebot.TeleBot(TOKEN_BOT)
 buttons_list = []
-signal = None ###
-callback_button = None#переменная для "calback.data == collect:"
+signal = None 
+callback_button = None
 
 @bot.message_handler(commands=['start'])
 def start_menu(message):
     bot.send_message(message.chat.id, 'Привет, я рад что ты решил воспользоваться моим ботом) С ним ты сможешь составить свои планы на день и непрерывно идти к своей цели')
     bot.send_message(message.chat.id, 'Чтобы начать работу введи /menu')
     bot.send_message(message.chat.id, 'Если нужна помощь введи /help')
-    
+
+#главное меню
 @bot.message_handler(commands=['menu'])
 def main_menu(message):
     global signal
@@ -28,27 +22,31 @@ def main_menu(message):
     markup = types.InlineKeyboardMarkup()
     button_count = 0
     for i in range(len(buttons_list)):
-        markup.add(types.InlineKeyboardButton(buttons_list[button_count], callback_data=buttons_list[button_count]))
+        short = short_sent(buttons_list[button_count])
+        markup.add(types.InlineKeyboardButton(short, callback_data=short))
         button_count += 1
     if len(buttons_list) == 0:
         bot.send_message(message.chat.id, 'У вас нет задач, создайте их командой <b>/new</b>', reply_markup=markup, parse_mode='html')
     else:
-        bot.send_message(message.chat.id, 'Вот ваши задачи', reply_markup=markup)
-
+        bot.send_message(message.chat.id, 'Вот ваши задачи🗒', reply_markup=markup)
+        
+#содание задачи
 @bot.message_handler(commands=['new'])
 def create_new_button(message):
     global signal
     bot.send_message(message.chat.id, 'Введи название задачи✍')
     signal = 'new'
     bot.register_message_handler(message, text_handler)
-
+    
+#добавление нескольких задач
 @bot.message_handler(commands=['few'])
 def add_few_buttons(message):
     global signal
     bot.send_message(message.chat.id, 'Введи несколько заданий через запятую и я их добавлю  Пример: Задание, Задание 2, Задание 3')
     signal = 'few'
     bot.register_message_handler(message, text_handler)
-
+    
+#инструкция к боту
 @bot.message_handler(commands=['help'])
 def help_menu(message):
     markup = types.InlineKeyboardMarkup()
@@ -63,7 +61,7 @@ def text_handler(message):
     global callback_button
     if signal == 'new':
         bot.delete_message(message.chat.id, message.message_id-1)
-        buttons_list.append(message.text)
+        buttons_list.append(message.text) 
         main_menu(message)
         signal = None
         
@@ -95,6 +93,7 @@ def markup_handler(callback):
     if callback.data == 'menu':
         bot.delete_message(callback.message.chat.id, callback.message.message_id)
         main_menu(callback.message)
+        
     #кнопка collect в меню кнопки
     elif callback.data == 'collect':
         bot.delete_message(callback.message.chat.id, callback.message.message_id)
@@ -102,16 +101,18 @@ def markup_handler(callback):
         markup = types.InlineKeyboardMarkup()
         markup.add(types.InlineKeyboardButton('⬅️Назад в меню', callback_data='menu'))
         bot.send_message(callback.message.chat.id, 'Задача выполнена', reply_markup=markup)
+
     #кнопка "редактировать"
     elif callback.data == 'edit':
         bot.delete_message(callback.message.chat.id, callback.message.message_id)
         bot.send_message(callback.message.chat.id,  'Введите новое название для задачи')
         signal = 'edit'
         bot.register_message_handler(callback.message, text_handler)
+
     #вывод меню в кнопке
     button_count = 0
     for i in range(len(buttons_list)):
-        if callback.data == buttons_list[button_count]:
+        if callback.data == short_sent(buttons_list[button_count]):
             bot.delete_message(callback.message.chat.id, callback.message.message_id)
             callback_button = buttons_list[button_count]
             markup = types.InlineKeyboardMarkup()
