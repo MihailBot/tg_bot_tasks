@@ -2,7 +2,7 @@ import telebot
 from telebot import types
 from custom_handlers import sort_few_tasks, short_sent
 
-TOKEN_BOT = '6395798798:AAFKLPZZaPT4ZzYHM6K5_VWiXdjVh4j6XiE'
+TOKEN_BOT = 'YOUR_BOT_ID'
 bot = telebot.TeleBot(TOKEN_BOT)
 buttons_list = []
 signal = None 
